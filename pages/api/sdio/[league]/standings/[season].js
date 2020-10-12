@@ -1,4 +1,6 @@
 const axios = require('axios');
+import { connectToDatabase } from '../../../../../util/mongodb';
+require('events').EventEmitter.defaultMaxListeners = 40;
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +15,28 @@ export default async (req, res) => {
   }
 
   const { query: { league, season }} = req;
+
+  console.time(`${league.toUpperCase()} ${season} Standings`);
+
+  const { db } = await connectToDatabase();
+  const cacheTime = process.env.EXTENDED_CACHE_MINS * 60 * 1000;
+  const cache = await db
+    .collection("sdiostandings")
+    .findOne({
+      _id: `${league}|${season}`,
+      updated_at: {
+        $gte: new Date(new Date().getTime() - cacheTime).toISOString()
+      }
+    })
+
+  if (cache) {
+    console.timeEnd(`${league.toUpperCase()} ${season} Standings`);
+    res.status(200).json(cache.data);
+    return;
+  }
+
+  console.log(`${league.toUpperCase()} ${season} Standings: [cache miss...]`);
+  
   const url = `https://api.sportsdata.io/v3/${league}/scores/json/Standings/${season}`;
   
   const { data } = await axios.get(url, {
@@ -34,7 +58,15 @@ export default async (req, res) => {
     lastTenLosses: team.LastTenLosses || null
   }));
   
+  await db
+  .collection("sdiostandings")
+  .updateOne(
+    { _id: `${league}|${season}` },
+    { $set: { data: teams, updated_at: new Date().toISOString() } },
+    { upsert: true }
+  )
 
-  res.status(200);
-  res.send(teams);
+  console.timeEnd(`${league.toUpperCase()} ${season} Standings`);
+  
+  res.status(200).json(teams);
 }

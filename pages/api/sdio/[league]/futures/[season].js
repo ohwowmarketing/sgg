@@ -1,4 +1,6 @@
 const axios = require('axios');
+import { connectToDatabase } from '../../../../../util/mongodb';
+require('events').EventEmitter.defaultMaxListeners = 40;
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +15,28 @@ export default async (req, res) => {
   }
 
   const { query: { league, season }} = req;
+
+  console.time(`${league.toUpperCase()} ${season} Futures`);
+
+  const { db } = await connectToDatabase();
+  const cacheTime = process.env.BRIEF_CACHE_MINS * 60 * 1000;
+  const cache = await db
+    .collection("sdiofutures")
+    .findOne({
+      _id: `${league}|${season}`,
+      updated_at: {
+        $gte: new Date(new Date().getTime() - cacheTime).toISOString()
+      }
+    })
+
+  if (cache) {
+    console.timeEnd(`${league.toUpperCase()} ${season} Futures`);
+    res.status(200).json(cache.data);
+    return;
+  }
+
+  console.log(`${league.toUpperCase()} ${season} Futures: [cache miss...]`);
+
   let key;
   switch (league) {
     case 'mlb': key = process.env.SDIO_MLB; break;
@@ -51,6 +75,15 @@ export default async (req, res) => {
       }))
   }));
 
-  res.status(200);
-  res.send(futures);
+  await db
+  .collection("sdiofutures")
+  .updateOne(
+    { _id: `${league}|${season}` },
+    { $set: { data: futures, updated_at: new Date().toISOString() } },
+    { upsert: true }
+  )
+
+  console.timeEnd(`${league.toUpperCase()} ${season} Futures`);
+
+  res.status(200).json(futures);
 }

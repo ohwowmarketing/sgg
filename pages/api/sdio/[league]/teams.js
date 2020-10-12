@@ -1,4 +1,6 @@
 const axios = require('axios');
+import { connectToDatabase } from '../../../../util/mongodb';
+require('events').EventEmitter.defaultMaxListeners = 40;
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +15,27 @@ export default async (req, res) => {
   }
 
   const { query: { league }} = req;
+  
+  console.time(`${league.toUpperCase()} Teams`);
+  
+  const { db } = await connectToDatabase();
+  const cacheTime = process.env.EXTENDED_CACHE_MINS * 60 * 1000;
+  const cache = await db
+    .collection("sdioteams")
+    .findOne({
+      _id: league,
+      updated_at: {
+        $gte: new Date(new Date().getTime() - cacheTime).toISOString()
+      }
+    })
+
+  if (cache) {
+    console.timeEnd(`${league.toUpperCase()} Teams`);
+    res.status(200).json(cache.data);
+    return;
+  }
+
+  console.log(`${league.toUpperCase()} Teams: [cache miss...]`);
   const url = `https://api.sportsdata.io/v3/${league}/scores/json/teams`;
   const { data } = await axios.get(url, {
     headers: {
@@ -26,9 +49,17 @@ export default async (req, res) => {
     display: `${item.City} ${item.Name}`,
     logo: item.WikipediaLogoUrl
   }));
-  
 
-  res.status(200);
-  res.send(teams);
+  await db
+    .collection("sdioteams")
+    .updateOne(
+      { _id: league },
+      { $set: { data: teams, updated_at: new Date().toISOString() } },
+      { upsert: true }
+    )
+
+  console.timeEnd(`${league.toUpperCase()} Teams`);
+  
+  res.status(200).json(teams);
 }
 

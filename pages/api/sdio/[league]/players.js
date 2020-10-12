@@ -1,4 +1,5 @@
 const axios = require('axios');
+import { connectToDatabase } from '../../../../util/mongodb';
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +14,27 @@ export default async (req, res) => {
   }
 
   const { query: { league }} = req;
+
+  console.time(`${league.toUpperCase()} Players`);
+
+  const { db } = await connectToDatabase();
+  const cache = await db
+    .collection("sdioplayers")
+    .findOne({
+      league: league,
+      updated_at: {
+        $gte: new Date(new Date().getTime() - 1 * 60 * 1000).toISOString()
+      }
+    })
+
+  if (cache) {
+    console.timeEnd(`${league.toUpperCase()} Players`);
+    res.status(200).json(cache.data);
+    return;
+  }
+  
+  console.log(`${league.toUpperCase()} Players: [cache miss...]`);
+
   const url = `https://api.sportsdata.io/v3/${league}/scores/json/players`;
   const { data } = await axios.get(url, {
     headers: {
@@ -21,14 +43,24 @@ export default async (req, res) => {
   });
 
   const players = data
-    // .filter((item) => item.Status === 'Active')
+    .filter((item) => item.Status === 'Active')
     .map((item) => ({
       sdio: item.PlayerID,
       team: item.TeamID,
       display: `${item.FirstName} ${item.LastName}`,
     }));
+  console.log(players);
 
-  res.status(200);
-  res.send(players);
+  await db
+    .collection("sdioplayers")
+    .updateOne(
+      { league: league },
+      { $set: { data: players, updated_at: new Date().toISOString() } },
+      { upsert: true }
+    )
+
+  console.timeEnd(`${league.toUpperCase()} Players`);
+  
+  res.status(200).json(players);
 }
 

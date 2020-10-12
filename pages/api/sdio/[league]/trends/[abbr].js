@@ -1,4 +1,6 @@
 const axios = require('axios');
+import { connectToDatabase } from '../../../../../util/mongodb';
+require('events').EventEmitter.defaultMaxListeners = 40;
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,37 +15,74 @@ export default async (req, res) => {
   }
 
   const { query: { league, abbr }} = req;
+
+  console.time(`${league.toUpperCase()} ${abbr} Trends`);
+
+  const { db } = await connectToDatabase();
+  const cacheTime = process.env.EXTENDED_CACHE_MINS * 60 * 1000;
+  const cache = await db
+    .collection("sdiotrends")
+    .findOne({
+      _id: `${league}|${abbr}`,
+      updated_at: {
+        $gte: new Date(new Date().getTime() - cacheTime).toISOString()
+      }
+    })
+
+  if (cache) {
+    console.timeEnd(`${league.toUpperCase()} ${abbr} Trends`);
+    res.status(200).json(cache.data);
+    return;
+  }
+
+  console.log(`${league.toUpperCase()} ${abbr} Trends: [cache miss...]`);
+  
   const url = `https://api.sportsdata.io/v3/${league}/odds/json/TeamTrends/${abbr}`;
-  console.log(url);
   const { data } = await axios.get(url, {
     headers: {
       'Ocp-Apim-Subscription-Key': process.env.SDIO
     }
   });
+
   const trends = {
     sdio: data.TeamID,
     home: data.TeamGameTrends
       .filter((trend) => trend.Scope === 'Last 10 Home Games')
       .map((trend) => ({
-        spreadWin: trend.WinsAgainstTheSpread,
+        spreadWins: trend.WinsAgainstTheSpread,
         spreadLosses: trend.LossesAgainstTheSpread,
-        spreadPush: trend.PushesAgainstTheSpread,
+        spreadPushes: trend.PushesAgainstTheSpread,
         overs: trend.Overs,
         unders: trend.Unders,
         overUnderPushes: trend.OverUnderPushes
-      })),
+      }))
+      .reduce((obj, item) => {
+        obj[item]
+      }),
     away: data.TeamGameTrends
       .filter((trend) => trend.Scope === 'Last 10 Away Games')
       .map((trend) => ({
-        spreadWin: trend.WinsAgainstTheSpread,
+        spreadWins: trend.WinsAgainstTheSpread,
         spreadLosses: trend.LossesAgainstTheSpread,
-        spreadPush: trend.PushesAgainstTheSpread,
+        spreadPushes: trend.PushesAgainstTheSpread,
         overs: trend.Overs,
         unders: trend.Unders,
         overUnderPushes: trend.OverUnderPushes
-      })),
+      }))
+      .reduce((obj, item) => {
+        obj[item]
+      }),
   };
 
-  res.status(200);
-  res.send(trends);
+  await db
+  .collection("sdiotrends")
+  .updateOne(
+    { _id: `${league}|${abbr}` },
+    { $set: { data: trends, updated_at: new Date().toISOString() } },
+    { upsert: true }
+  )
+
+  console.timeEnd(`${league.toUpperCase()} ${abbr} Trends`);
+
+  res.status(200).json(trends);
 }
