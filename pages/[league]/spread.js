@@ -51,8 +51,8 @@ export default function Spread({ league, spreads }) {
                 <td>{score(spread.wins, spread.losses)}</td>
                 {(league !== 'nfl') ? (
                   <>
-                    <td></td>
-                    <td></td>
+                    <td>{score(spread.homeWins, spread.homeLosses)}</td>
+                    <td>{score(spread.awayWins, spread.awayLosses)}</td>
                   </>
                 ) : null}
                 <td>
@@ -82,7 +82,7 @@ export default function Spread({ league, spreads }) {
 
 export async function getServerSideProps({ params }) {
   const { league } = params;
-  const { data } = await axios(`http://localhost:3000/api/${league}/spread`);
+  const { data } = await axios(`${process.env.API_URL}/api/${league}/spread`);
   return {
     props: { league, spreads: data },
   }
