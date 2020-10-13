@@ -53,7 +53,7 @@ const getSpreads = async (league) => {
   const { db } = await connectToDatabase();
   const cacheTime = process.env.BRIEF_CACHE_MINS * 60 * 1000;
   const cache = await db
-    .collection("spread")
+    .collection("spreads")
     .findOne({
       _id: `${league}`,
       updated_at: {
