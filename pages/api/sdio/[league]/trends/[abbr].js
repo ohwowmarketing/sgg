@@ -37,10 +37,17 @@ export default async (req, res) => {
 
   console.log(`${league.toUpperCase()} ${abbr} Trends: [cache miss...]`);
   
+  let key;
+  switch (league) {
+    case 'mlb': key = process.env.SDIO_MLB; break;
+    case 'nba': key = process.env.SDIO_NBA; break;
+    case 'nfl': key = process.env.SDIO_NFL; break;
+    default: break;
+  }
   const url = `https://api.sportsdata.io/v3/${league}/odds/json/TeamTrends/${abbr}`;
   const { data } = await axios.get(url, {
     headers: {
-      'Ocp-Apim-Subscription-Key': process.env.SDIO
+      'Ocp-Apim-Subscription-Key': key
     }
   });
 
