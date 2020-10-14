@@ -23,6 +23,8 @@ const getTeam = (id, teams) => teams.find((team) => team.sdio === id)
 const getRow = async (league, standing, teams) => {
   const team = await getTeam(standing.sdio, teams);
   const trends = await getTrends(league, team.abbr);
+  const homeNum = (standing.wins + standing.losses < 6) ? 'homeFive' : 'homeTen';
+  const awayNum = (standing.wins + standing.losses < 6) ? 'awayFive' : 'awayTen';
   return {
     logo: team.logo,
     display: team.display,
@@ -32,18 +34,18 @@ const getRow = async (league, standing, teams) => {
     homeLosses: standing.homeLosses,
     awayWins: standing.awayWins,
     awayLosses: standing.awayLosses,
-    homeSpreadWins: trends.home.spreadWins,
-    homeSpreadLosses: trends.home.spreadLosses,
-    homeSpreadPushes: trends.home.spreadPushes,
-    awaySpreadWins: trends.away.spreadWins,
-    awaySpreadLosses: trends.away.spreadLosses,
-    awaySpreadPushes: trends.away.spreadPushes,
-    homeOvers: trends.home.overs,
-    homeUnders: trends.home.unders,
-    homeOverUnderPushes: trends.home.overUnderPushes,
-    awayOvers: trends.away.overs,
-    awayUnders: trends.away.unders,
-    awayOverUnderPushes: trends.away.overUnderPushes
+    homeSpreadWins: trends[homeNum].spreadWins,
+    homeSpreadLosses: trends[homeNum].spreadLosses,
+    homeSpreadPushes: trends[homeNum].spreadPushes,
+    awaySpreadWins: trends[awayNum].spreadWins,
+    awaySpreadLosses: trends[awayNum].spreadLosses,
+    awaySpreadPushes: trends[awayNum].spreadPushes,
+    homeOvers: trends[homeNum].overs,
+    homeUnders: trends[homeNum].unders,
+    homeOverUnderPushes: trends[homeNum].overUnderPushes,
+    awayOvers: trends[awayNum].overs,
+    awayUnders: trends[awayNum].unders,
+    awayOverUnderPushes: trends[awayNum].overUnderPushes
   }
 }
 

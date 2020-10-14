@@ -46,7 +46,20 @@ export default async (req, res) => {
 
   const trends = {
     sdio: data.TeamID,
-    home: data.TeamGameTrends
+    homeFive: data.TeamGameTrends
+      .filter((trend) => trend.Scope === 'Last 5 Home Games')
+      .map((trend) => ({
+        spreadWins: trend.WinsAgainstTheSpread,
+        spreadLosses: trend.LossesAgainstTheSpread,
+        spreadPushes: trend.PushesAgainstTheSpread,
+        overs: trend.Overs,
+        unders: trend.Unders,
+        overUnderPushes: trend.OverUnderPushes
+      }))
+      .reduce((obj, item) => {
+        obj[item]
+      }),
+    homeTen: data.TeamGameTrends
       .filter((trend) => trend.Scope === 'Last 10 Home Games')
       .map((trend) => ({
         spreadWins: trend.WinsAgainstTheSpread,
@@ -59,7 +72,20 @@ export default async (req, res) => {
       .reduce((obj, item) => {
         obj[item]
       }),
-    away: data.TeamGameTrends
+    awayFive: data.TeamGameTrends
+      .filter((trend) => trend.Scope === 'Last 5 Away Games')
+      .map((trend) => ({
+        spreadWins: trend.WinsAgainstTheSpread,
+        spreadLosses: trend.LossesAgainstTheSpread,
+        spreadPushes: trend.PushesAgainstTheSpread,
+        overs: trend.Overs,
+        unders: trend.Unders,
+        overUnderPushes: trend.OverUnderPushes
+      }))
+      .reduce((obj, item) => {
+        obj[item]
+      }),
+    awayTen: data.TeamGameTrends
       .filter((trend) => trend.Scope === 'Last 10 Away Games')
       .map((trend) => ({
         spreadWins: trend.WinsAgainstTheSpread,
