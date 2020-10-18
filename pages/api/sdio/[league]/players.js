@@ -1,5 +1,6 @@
 const axios = require('axios');
 import { connectToDatabase } from '../../../../util/mongodb';
+require('events').EventEmitter.defaultMaxListeners = 200;
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,7 +50,6 @@ export default async (req, res) => {
       team: item.TeamID,
       display: `${item.FirstName} ${item.LastName}`,
     }));
-  console.log(players);
 
   await db
     .collection("sdioplayers")

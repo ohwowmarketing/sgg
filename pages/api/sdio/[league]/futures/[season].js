@@ -1,6 +1,6 @@
 const axios = require('axios');
 import { connectToDatabase } from '../../../../../util/mongodb';
-require('events').EventEmitter.defaultMaxListeners = 40;
+require('events').EventEmitter.defaultMaxListeners = 200;
 
 export default async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');

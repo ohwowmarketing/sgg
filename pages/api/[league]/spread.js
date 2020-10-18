@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { connectToDatabase } from '../../../util/mongodb';
+import { setHeaders } from '../../../util/response';
+import { checkCache, saveCache } from '../../../util/mongodb';
 require('events').EventEmitter.defaultMaxListeners = 40;
 
 const getTeams = async (league) => {
@@ -52,22 +53,11 @@ const getRow = async (league, standing, teams) => {
 const getSpreads = async (league) => {
   console.time(`${league.toUpperCase()} Spread`);
 
-  const { db } = await connectToDatabase();
-  const cacheTime = process.env.BRIEF_CACHE_MINS * 60 * 1000;
-  const cache = await db
-    .collection("spreads")
-    .findOne({
-      _id: `${league}`,
-      updated_at: {
-        $gte: new Date(new Date().getTime() - cacheTime).toISOString()
-      }
-    })
-
+  const cache = await checkCache('spreads', `${league}`);
   if (cache) {
     console.timeEnd(`${league.toUpperCase()} Spread`);
-    return cache.data;
+    return cache;
   }
-
   console.log(`${league.toUpperCase()} Spread: [cache miss...]`);
 
   const teams = await getTeams(league);
@@ -84,13 +74,7 @@ const getSpreads = async (league) => {
     return a.wins > b.wins ? -1 : 1;
   });
 
-  await db
-  .collection("spreads")
-  .updateOne(
-    { _id: league },
-    { $set: { data: spreads, updated_at: new Date().toISOString() } },
-    { upsert: true }
-  )
+  await saveCache('spreads', `${league}`, spreads);
 
   console.timeEnd(`${league.toUpperCase()} Spread`);
 
@@ -98,14 +82,8 @@ const getSpreads = async (league) => {
 }
 
 export default async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
+  const end = setHeaders(req, res);
+  if (end) {
     return;
   }
 
