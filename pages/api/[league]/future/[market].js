@@ -176,7 +176,7 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
 
     let data = {};
     sportsbooks.forEach((sportsbook) => {
-      const payout = bets
+      const [payout] = bets
         .filter((bet) => bet.sportsbook === sportsbook)
         .map((bet) => ({
           american: bet.american,
