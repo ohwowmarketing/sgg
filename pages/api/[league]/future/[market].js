@@ -282,8 +282,8 @@ const getRows = async (league, ids, futures, meta, sportsbooks, teams) => {
 }
 
 const getFuturesByMarket = async (league, market) => {
-  // const cache = await isCached(league, market);
-  // if (cache) { return cache; }
+  const cache = await isCached(league, market);
+  if (cache) { return cache; }
 
   const allFutures = await getFutures(league);
   const futures = allFutures.filter((future) => future.bet === parseInt(market));
