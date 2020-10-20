@@ -226,18 +226,6 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
   }
 }
 
-const getParticipantSportsbooks = (futures, meta, participant, sportsbooks) => {
-  if (!meta.single) {
-    const multi = getMultiFutures(futures, meta);
-    const bets = multi.filter((item) => item.id === participant);
-    return getSportsbookMultiBets(sportsbooks, bets);
-  } else {
-    const single = getSingleFutures(futures[0], meta);
-    const bets = single.filter((item) => item.id === participant);
-    return getSportsbookSingleBets(sportsbooks, bets);
-  }
-}
-
 const getParticipantDisplay = (meta, id, team, player) => {
   if (meta.known) {
     if (meta.isTeam) {
@@ -259,16 +247,16 @@ const getParticipantLogo = (meta, team) => {
   return null;
 }
 
-const getParticipantConcensus = (sportsbooks) => {
-  if (Object.keys(sportsbooks).includes('Concensus')) {
-    const concensus = sportsbooks.Concensus;
+const getParticipantConcensus = (bets) => {
+  if (Object.keys(bets).includes('Concensus')) {
+    const concensus = bets.Concensus;
     if (Object.keys(concensus).includes('american')) {
-      return sportsbooks.Concensus.american;
+      return bets.Concensus.american;
     } else {
       if (consensus.length > 0) {
         const [type] = Object.keys(consensus);
         if (type) {
-          return sportsbooks.Concensus[type].american;
+          return bets.Concensus[type].american;
         }
       }
     }
@@ -281,14 +269,12 @@ const getRows = async (league, ids, futures, meta, sportsbooks, teams) => {
     const player = (meta.known && !meta.isTeam) ? await getPlayer(league, id) : null;
     const teamId = (meta.known) ? (meta.isTeam ? id : player.team ) : null ;
     const team = (teamId) ? teams.find((team) => team.sdio === teamId) : null;
-    // const participantSportsbooks = getParticipantSportsbooks(futures, meta, id, sportsbooks);
     const participantBets = await getParticipantBets(futures, meta, id, sportsbooks);
     return {
       display: getParticipantDisplay(meta, id, team, player),
       logo: getParticipantLogo(meta, team),
-      // order: getParticipantConcensus(participantSportsbooks),
+      order: getParticipantConcensus(participantBets),
       participantBets,
-      // sportsbooks: participantSportsbooks
     }
   }));
 }
@@ -306,10 +292,10 @@ const getFuturesByMarket = async (league, market) => {
   const sportsbooks = sortSportsbooks(unsortedSportsbooks);
   const participantIds = getParticipantIds(futures, meta);
   const rows = await getRows(league, participantIds, futures, meta, sportsbooks, teams);
-  // rows.sort(sortRows);
+  rows.sort(sortRows);
 
   const data = { market, meta, sportsbooks, rows }
-  // await saveCache('futures', `${league}|${market}`, data);
+  await saveCache('futures', `${league}|${market}`, data);
   return data;
 }
 
