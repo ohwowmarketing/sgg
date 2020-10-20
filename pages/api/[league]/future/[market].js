@@ -42,7 +42,7 @@ const sortSportsbooks = (sportsbooks) => {
 
 const sortRows = (a, b) => {
   if (!a.order && !b.order) {
-    return 0;
+    return a.display.localeCompare(b.display);
   } else if (a.order && !b.order) {
     return 1;
   } else if (!a.order && b.order) {
@@ -104,59 +104,6 @@ const getParticipantIds = (futures, meta) => {
     });
   }
   return Array.from(participants);
-}
-
-const getMultiFutures = (futures, meta) => {
-  return futures.map((future) => ({
-    id: (meta.isTeam) ? future.team : future.player,
-    sportsbooks: future.bets.map((bet) => ({
-      [bet.sportsbook]: {
-        [bet.type]: {
-          american: bet.american,
-          decimal: bet.decimal
-        }
-      }
-    }))
-  }));
-}
-
-const getSingleFutures = (future, meta) => {
-  return future.bets.map((bet) => ({
-    id: (meta.isTeam) ? bet.team : bet.player,
-    sportsbooks: future.bets.map((bet) => ({
-      [bet.sportsbook]: {
-        american: bet.american,
-        decimal: bet.decimal
-      }
-    }))
-  }));
-}
-
-const getMultiTypes = (bets, sportsbook) => {
-  return bets
-    .filter((bet) => Object.keys(bet.sportsbooks).includes(sportsbook))
-    .map((bet) => bet.sportsbooks[sportsbook]);
-}
-
-const getSportsbookMultiBets = (sportsbooks, bets) => {
-  let data = {};
-
-  sportsbooks.forEach((sportsbook) => {
-    if (Object.keys(bets.sportsbooks).includes(sportsbook)) {
-      data[sportsbook] = getMultiTypes(bets, sportsbook);
-    }
-  });
-  return data;
-}
-
-const getSportsbookSingleBets = (sportsbooks, bets) => {
-  let data = {};
-  sportsbooks.forEach((sportsbook) => {
-    if (Object.keys(bets.sportsbooks).includes(sportsbook)) {
-      data[sportsbook] = getMultiTypes(bets, sportsbook);
-    }
-  });
-  return data;
 }
 
 const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
