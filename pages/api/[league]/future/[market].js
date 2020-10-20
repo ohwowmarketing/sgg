@@ -272,10 +272,12 @@ const getRows = async (league, ids, futures, meta, sportsbooks, teams) => {
     const teamId = (meta.known) ? (meta.isTeam ? id : player.team ) : null ;
     const team = (teamId) ? teams.find((team) => team.sdio === teamId) : null;
     const participantBets = await getParticipantBets(futures, meta, id, sportsbooks);
+    const order = getParticipantConcensus(participantBets);
+
     return {
       display: getParticipantDisplay(meta, id, team, player),
       logo: getParticipantLogo(meta, team),
-      order: participantBets.Consensus.american || null, // getParticipantConcensus(participantBets),
+      order,
       participantBets,
     }
   }));
