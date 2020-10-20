@@ -248,15 +248,17 @@ const getParticipantLogo = (meta, team) => {
 }
 
 const getParticipantConcensus = (bets) => {
-  if (Object.keys(bets).includes('Concensus')) {
-    const concensus = bets.Concensus;
-    if (Object.keys(concensus).includes('american')) {
-      return bets.Concensus.american;
-    } else {
-      if (consensus.length > 0) {
-        const [type] = Object.keys(consensus);
-        if (type) {
-          return bets.Concensus[type].american;
+  if (bets) {
+    if (Object.keys(bets).includes('Consensus')) {
+      const concensus = bets.Concensus;
+      if (Object.keys(concensus).includes('american')) {
+        return concensus.american;
+      } else {
+        if (consensus.length > 0) {
+          const [type] = Object.keys(consensus);
+          if (type) {
+            return concensus[type].american;
+          }
         }
       }
     }
@@ -273,15 +275,15 @@ const getRows = async (league, ids, futures, meta, sportsbooks, teams) => {
     return {
       display: getParticipantDisplay(meta, id, team, player),
       logo: getParticipantLogo(meta, team),
-      order: getParticipantConcensus(participantBets),
+      order: participantBets.Consensus.american || null, // getParticipantConcensus(participantBets),
       participantBets,
     }
   }));
 }
 
 const getFuturesByMarket = async (league, market) => {
-  const cache = await isCached(league, market);
-  if (cache) { return cache; }
+  // const cache = await isCached(league, market);
+  // if (cache) { return cache; }
 
   const allFutures = await getFutures(league);
   const futures = allFutures.filter((future) => future.bet === parseInt(market));
