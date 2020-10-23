@@ -155,7 +155,8 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
         .map((bet) => ({
           [bet.type]: {
             american: bet.american,
-            decimal: bet.decimal
+            decimal: bet.decimal,
+            value: bet.value
           }
         }));
       let types = {};
@@ -164,7 +165,8 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
         const [key] = keys;
         types[key] = {
           american: type[key].american,
-          decimal: type[key].decimal
+          decimal: type[key].decimal,
+          value: type[key].value
         } 
       });
       data[sportsbook] = types;
@@ -175,21 +177,25 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
 
 const getParticipantDisplay = (meta, id, team, player) => {
   if (meta.known) {
-    if (meta.isTeam) {
+    if (meta.isTeam && team) {
       if (team.display) {
         return team.display;
       }
     }
-    if (player.display) {
-      return player.display;
+    if (!meta.isTeam && player) {
+      if (player.display) {
+        return player.display;
+      }
     }
   }
   return id;
 }
 
 const getParticipantLogo = (meta, team) => {
-  if (meta.known && team.logo) {
-    return team.logo;
+  if (meta.known && team) {
+    if (team.logo) {
+      return team.logo;
+    }
   }
   return null;
 }
@@ -199,10 +205,17 @@ const getParticipantConsensus = (bets) => {
     if (typeof bets.Consensus === 'object' && Object.keys(bets.Consensus).includes('american')) {
       return bets.Consensus.american;
     } else {
-      if (typeof bets.Consensus === 'object' && bets.Consensus.length > 0) {
-        const [type] = Object.keys(bets.Consensus);
-        if (typeof bets.Consensus[type] === 'object' && Object.keys(bets.Consensus[type]).includes('american')) {
-          return bets.Consensus[type].american;
+      if (typeof bets.Consensus === 'object') {
+        const types = Object.keys(bets.Consensus);
+        if (types.includes('Over')) {
+          if (typeof bets.Consensus.Over === 'object' && Object.keys(bets.Consensus.Over).includes('american')) {
+            return bets.Consensus.Over.american
+          }
+        }
+        if (types.includes('Yes')) {
+          if (typeof bets.Consensus.Yes === 'object' && Object.keys(bets.Consensus.Yes).includes('american')) {
+            return bets.Consensus.Yes.american
+          }
         }
       }
     }
@@ -215,12 +228,14 @@ const getRows = async (league, ids, futures, meta, sportsbooks, teams) => {
     const player = (meta.known && !meta.isTeam) ? await getPlayer(league, id) : null;
     const teamId = (meta.known) ? (meta.isTeam ? id : player.team ) : null ;
     const team = (teamId) ? teams.find((team) => team.sdio === teamId) : null;
+    const display = getParticipantDisplay(meta, id, team, player);
+    const logo = getParticipantLogo(meta, team);
     const participantBets = await getParticipantBets(futures, meta, id, sportsbooks);
     const order = getParticipantConsensus(participantBets);
 
     return {
-      display: getParticipantDisplay(meta, id, team, player),
-      logo: getParticipantLogo(meta, team),
+      display,
+      logo,
       order,
       participantBets,
     }
@@ -243,7 +258,7 @@ const getFuturesByMarket = async (league, market) => {
   rows.sort(sortRows);
 
   const data = { market, meta, sportsbooks, rows }
-  await saveCache('futures', `${league}|${market}`, data);
+  // await saveCache('futures', `${league}|${market}`, data);
   return data;
 }
 
