@@ -258,7 +258,7 @@ const getFuturesByMarket = async (league, market) => {
   rows.sort(sortRows);
 
   const data = { market, meta, sportsbooks, rows }
-  // await saveCache('futures', `${league}|${market}`, data);
+  await saveCache('futures', `${league}|${market}`, data);
   return data;
 }
 
