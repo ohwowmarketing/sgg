@@ -42,6 +42,9 @@ const sortSportsbooks = (sportsbooks) => {
 
 const sortRows = (a, b) => {
   if (!a.order && !b.order) {
+    if (!a.display && !b.display) {
+      return 0;
+    }
     return a.display.localeCompare(b.display);
   } else if (a.order && !b.order) {
     return 1;
@@ -96,9 +99,9 @@ const getParticipantIds = (futures, meta) => {
     });
   } else {
     futures[0].bets.forEach((bet) => {
-      let participant = { display: bet.participant };
+      let participant = bet.participant;
       if (meta.known) {
-        participant.id = (meta.isTeam) ? bet.team : bet.player;
+        participant = (meta.isTeam) ? bet.team : bet.player;
       }
       participants.add(participant);
     });
@@ -175,21 +178,38 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
   }
 }
 
-const getParticipantDisplay = (meta, id, team, player) => {
+const getParticipantDisplay = (meta, id, team, player, futures) => {
   if (meta.known) {
     if (meta.isTeam && team) {
       if (team.display) {
         return team.display;
-      } else {
-        return id.display;
       }
     }
-    if (!meta.isTeam && player) {
+    else if (!meta.isTeam && player) {
       if (player.display) {
         return player.display;
       } else {
         return id.display;
       }
+    } else {
+      let display = id;
+      if (meta.single) {
+        const bets = futures[0].bets.filter((bet) => bet.team === id);
+        bets.forEach((bet) => {
+          if (bet.participant !== 'All Pros') {
+            display = bet.participant;
+          }
+        });
+      } else {
+        let display = id;
+        const bets = futures.filter((future) => future.team === id);
+        bets.forEach((bet) => {
+          if (bet.participant !== 'All Pros') {
+            display = bet.participant;
+          }
+        });
+      }
+      return display;
     }
   }
   return id.display;
@@ -229,12 +249,12 @@ const getParticipantConsensus = (bets) => {
 
 const getRows = async (league, participants, futures, meta, sportsbooks, teams) => {
   return await Promise.all(participants.map(async (participant) => {
-    const player = (meta.known && !meta.isTeam) ? await getPlayer(league, participant.id) : null;
-    const teamId = (meta.known) ? (meta.isTeam ? participant.id : player.team ) : null ;
+    const player = (meta.known && !meta.isTeam) ? await getPlayer(league, participant) : null;
+    const teamId = (meta.known) ? (meta.isTeam ? participant : player.team ) : null ;
     const team = (teamId) ? teams.find((team) => team.sdio === teamId) : null;
-    const display = getParticipantDisplay(meta, participant, team, player);
+    const display = getParticipantDisplay(meta, participant, team, player, futures);
     const logo = getParticipantLogo(meta, team);
-    const participantBets = await getParticipantBets(futures, meta, participant.id, sportsbooks);
+    const participantBets = await getParticipantBets(futures, meta, participant, sportsbooks);
     const order = getParticipantConsensus(participantBets);
 
     return {
