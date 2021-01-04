@@ -5,7 +5,7 @@ const score = (wins, losses, draws = 0) => {
   return (draws > 0) ?  `${wins} - ${losses} - ${draws}` : `${wins} - ${losses}`;
 }
 
-export default function Spread({ league, spreads }) {
+const Spread = ({ league, spreads }) => {
 
   return (
     <div className="container">
@@ -79,6 +79,8 @@ export default function Spread({ league, spreads }) {
     </div>
   )
 }
+
+export default Spread;
 
 export async function getServerSideProps({ params }) {
   const { league } = params;

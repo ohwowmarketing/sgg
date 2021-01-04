@@ -18,6 +18,7 @@ export default async (req, res) => {
   let url;
   let key;
   let id;
+  let timer;
 
   if (league === 'nfl') {
     const [season, week] = params;

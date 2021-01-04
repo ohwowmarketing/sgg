@@ -11,15 +11,14 @@ export default function Home({ isConnected }) {
 
       <main>
         <h1 className="title">
-          Welcome to the <a href="https://sportsgamblingguides.com/">Sports Gambling Guide API!</a>
+          <a href="https://sportsgamblingguides.com/">SportsGamblingGuides API</a>
         </h1>
 
         {isConnected ? (
           <h2 className="subtitle">DB connected&hellip;</h2>
         ) : (
           <h2 className="subtitle">
-            You are NOT connected to MongoDB. Check the README.md{' '}
-            for instructions.
+            You are NOT connected to MongoDB
           </h2>
         )}
 
@@ -34,6 +33,9 @@ export default function Home({ isConnected }) {
           <li>api/sdio/{"{league}"}/players</li>
           <li>api/sdio/{"{league}"}/teams</li>
           <li>api/sdio/{"{league}"}/trends/{"{team-key}"}</li>
+          <li>api/{"{league}"}/spread</li>
+          <li>api/{"{league}"}/market</li>
+          <li>api/{"{league}"}/future/{"{market}"}</li>
         </ul>
       </main>
 

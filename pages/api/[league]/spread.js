@@ -27,6 +27,7 @@ const getRow = async (league, standing, teams) => {
   const homeNum = (standing.wins + standing.losses < 6) ? 'homeFive' : 'homeTen';
   const awayNum = (standing.wins + standing.losses < 6) ? 'awayFive' : 'awayTen';
   return {
+    sdio: team.sdio,
     logo: team.logo,
     display: team.display,
     wins: standing.wins,
