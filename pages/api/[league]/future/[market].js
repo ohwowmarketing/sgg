@@ -144,7 +144,7 @@ const getParticipantBets = (futures, meta, participant, sportsbooks) => {;
         if (meta.known && meta.isTeam && future.team === participant) {
           return true;
         }
-        if (meta.known && !meta.isTeam && futurte.player === participant) {
+        if (meta.known && !meta.isTeam && future.player === participant) {
           return true;
         }
         return false;
