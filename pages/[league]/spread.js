@@ -23,7 +23,7 @@ const Spread = ({ league, spreads }) => {
           <thead>
             <tr>
               <th className="team-label">Team</th>
-              <th>Overall</th>
+              <th>Overall <small>W/L</small></th>
               {league !== 'nfl' && (
                 <>
                 <th>Home</th>
